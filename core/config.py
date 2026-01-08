@@ -1,8 +1,10 @@
 import os
-from pathlib import Path
-from typing import Optional
 from dataclasses import dataclass
+from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv(verbose=True)
 
 @dataclass
 class Config:
@@ -15,8 +17,8 @@ class Config:
 
     # HuggingFace Model
     HF_API_URL = os.getenv("HF_API_URL", "https://router.huggingface.co/v1")
-    HF_MODEL: str = os.getenv("HF_MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
-    HF_API_TOKEN: str = os.getenv("HF_TOKEN", "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")
+    HF_MODEL: str = os.getenv("HF_MODEL_NAME", "defog/sqlcoder-7b-2")
+    HF_API_TOKEN: str = os.getenv("HF_TOKEN")
 
     # MCP Server Configuration
     MCP_SERVER_HOST: str = os.getenv("MCP_SERVER_HOST", "localhost")
@@ -46,6 +48,6 @@ class Config:
 config = Config()
 try:
     config.validate()
-    print("✅ Configuration validated")
+    print("Configuration validated")
 except ValueError as e:
-    print(f"❌ Configuration error: {e}")
+    print(f"Configuration error: {e}")
