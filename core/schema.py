@@ -1,5 +1,5 @@
 from typing import List, Dict, Any
-
+import json
 from core.database import db_manager
 
 
@@ -388,6 +388,56 @@ class SchemaManager:
                     f"  {fk['COLUMN_NAME']} → {fk['REFERENCED_TABLE_NAME']}.{fk['REFERENCED_COLUMN_NAME']}")
 
         return "\n".join(visualization)
+
+    # def get_full_schema_context(self, database_name: str = None) -> str:
+    #     """Get the full database schema as a formatted string"""
+    #     try:
+    #         tables = self.get_table_list(database_name=database_name)
+    #         schema_lines = []
+    #
+    #         for table in tables:
+    #             details = self.get_complete_table_details(table, database_name)
+    #             schema_lines.append(f"Table: {table}")
+    #             for col in details['columns']:
+    #                 schema_lines.append(f"  - {col['COLUMN_NAME']} ({col['COLUMN_TYPE']})")
+    #             schema_lines.append("")
+    #
+    #         return "\n".join(schema_lines)
+    #
+    #     except Exception as e:
+    #         raise Exception(f"Failed to get full schema context: {e}")
+
+
+    def get_full_schema_context(self, database_name: str = None) -> str:
+        """Return full schema context (complete details for every table) as a single JSON string."""
+        try:
+            if not database_name:
+                with db_manager.get_cursor() as cursor:
+                    cursor.execute("SELECT DATABASE() as db")
+                    row = cursor.fetchone()
+                    database_name = row["db"] if row else None
+
+            if not database_name:
+                raise ValueError("database_name is required (no active database selected)")
+
+            tables = self.get_table_list(database_name=database_name)
+
+            full_context = {
+                "database": database_name,
+                "table_count": len(tables),
+                "tables": {},
+            }
+
+            for table_name in tables:
+                full_context["tables"][table_name] = self.get_complete_table_details(
+                    table_name=table_name,
+                    database_name=database_name,
+                )
+
+            return json.dumps(full_context, indent=2, default=str)
+
+        except Exception as e:
+            raise Exception(f"Failed to get full schema context: {e}")
 
 
 schema_manager = SchemaManager()

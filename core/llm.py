@@ -38,9 +38,9 @@ class HuggingFaceClientWrapper:
             print(f"Error calling HuggingFace API: {e}")
             raise e
 
-    # def __call__(self, prompt):
-    #     """Support for direct calling"""
-    #     return self.invoke(prompt)
+    def __call__(self, prompt):
+        """Support for direct calling"""
+        return self.invoke(prompt)
 
 
 class HFInferenceClient:
