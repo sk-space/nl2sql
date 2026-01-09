@@ -8,6 +8,8 @@ from core.database import db_manager
 from core.llm import hf_interface
 from core.schema import schema_manager
 
+import json
+
 load_dotenv()
 
 # Initialize MCP
@@ -15,21 +17,21 @@ mcp = FastMCP("NL2SQL Agent")
 
 # Tools
 @mcp.tool()
-def convert_to_sql(query: str) -> Dict[str, Any]:
+def convert_to_sql(query: str) -> str:
     try:
         details = schema_manager.get_full_schema_context(config.DB_NAME)
         sql = nl2sql_agent.generate_sql(query, details)
-        return {
+        return json.dumps({
             "success": True,
             "query": query,
             "sql": sql
-        }
+        })
     except Exception as e:
-        return {
+        return json.dumps({
             "success": False,
             "error": str(e),
             "query": query
-        }
+        })
 
 
 if __name__ == "__main__":
