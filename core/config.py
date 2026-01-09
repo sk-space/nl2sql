@@ -1,3 +1,4 @@
+import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -5,6 +6,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv(verbose=True)
+logger = logging.getLogger(__name__)
 
 @dataclass
 class Config:
@@ -36,7 +38,9 @@ class Config:
         required_vars = {
             "DB_HOST": self.DB_HOST,
             "DB_USER": self.DB_USER,
-            "DB_NAME": self.DB_NAME
+            "DB_NAME": self.DB_NAME,
+            "HF_MODEL": self.HF_MODEL,
+            "HF_API_URL": self.HF_API_URL
         }
 
         missing = [var for var, value in required_vars.items() if not value]
@@ -46,8 +50,9 @@ class Config:
 
 # Create and validate config
 config = Config()
+
 try:
     config.validate()
-    print("Configuration validated")
+    logger.info("Configuration validated")
 except ValueError as e:
-    print(f"Configuration error: {e}")
+    logger.info("Configuration error: {e}")
