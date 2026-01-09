@@ -1,3 +1,4 @@
+import logging
 import os
 
 import torch
@@ -7,6 +8,7 @@ from transformers import AutoModel, AutoTokenizer, pipeline
 from openai import OpenAI
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 
 class HuggingFaceClientWrapper:
@@ -35,7 +37,7 @@ class HuggingFaceClientWrapper:
             )
             return completion.choices[0].message.content
         except Exception as e:
-            print(f"Error calling HuggingFace API: {e}")
+            logger.info(f"Error calling HuggingFace API: {e}")
             raise e
 
     def __call__(self, prompt):
@@ -59,22 +61,22 @@ class HFInferenceClient:
 
     def _load_huggingface_api_model(self):
         """Load model using HuggingFace API (recommended)"""
-        print(f"Loading model via HuggingFace API: {self._model_name}")
+        logger.info("Loading model via HuggingFace API: {self._model_name}")
 
         # Check if HF_TOKEN is available
         if not os.getenv("HF_TOKEN"):
-            print("Warning: HF_TOKEN not found in environment variables. Using fallback.")
+            logger.info("Warning: HF_TOKEN not found in environment variables. Using fallback.")
 
         try:
             return HuggingFaceClientWrapper()
         except Exception as e:
-            print(f"Error loading model via API: {e}")
+            logger.info("Error loading model via API: {e}")
 
 
     def _load_local_model(self):
         """Load the HuggingFace model locally with fallbacks"""
         try:
-            print(f"Loading local model: {self._model_name}")
+            logger.info("Loading local model: {self._model_name}")
 
             tokenizer = AutoTokenizer.from_pretrained(self._model_name)
 
@@ -101,12 +103,12 @@ class HFInferenceClient:
                 eos_token_id=tokenizer.eos_token_id
             )
 
-            print("Local model loaded successfully")
+            logger.info("Local model loaded successfully")
 
             return HuggingFacePipeline(pipeline=pipe)
 
         except Exception as e:
-            print(f"Error loading local model: {self._model_name}: {e}")
+            logger.info("Error loading local model: {self._model_name}: {e}")
 
 
 # Create global instance

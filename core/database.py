@@ -1,8 +1,11 @@
+import logging
 from typing import Any
 
 import pymysql
 from pymysql.cursors import DictCursor
 from core.config import config
+
+logger = logging.getLogger(__name__)
 
 class DatabaseManager:
     def __init__(self):
@@ -21,7 +24,7 @@ class DatabaseManager:
                 charset='utf8mb4',
                 autocommit=True
             )
-            print(f"✅ Connected to database: {config.DB_NAME}")
+            logger.info("✅ Connected to database: {config.DB_NAME}")
         except Exception as e:
             raise ConnectionError(f"❌ Database connection failed: {e}")
 
@@ -30,7 +33,7 @@ class DatabaseManager:
         if self._connection:
             self._connection.close()
             self._connection = None
-            print("✅ Database connection closed")
+            logger.info("✅ Database connection closed")
 
     def is_connected(self) -> bool:
         """Check if database is connected"""

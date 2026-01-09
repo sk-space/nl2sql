@@ -1,12 +1,9 @@
-from typing import Tuple, Optional
-import re
-import os
-import requests
 import logging
+import os
 
 from dotenv import load_dotenv
-from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts import PromptTemplate
 
 from core.llm import hf_interface
 
@@ -57,7 +54,7 @@ class NL2SQLAgent:
 
     def generate_sql(self, natural_language_query, schema_context):
         """Generate SQL from natural language query"""
-        print(f"GQ NLQ: {self.current_model}")
+        logger.info("GQ NLQ: {self.current_model}")
         prompt_template = PromptTemplate(
             input_variables=["schema", "question"],
             template="""
@@ -101,12 +98,12 @@ class NL2SQLAgent:
                         question=natural_language_query
                     )
                 )
-            print(f"Response text: {response_text}")
+            logger.info("Response text: {response_text}")
             sql_query = self.output_parser.parse(response_text)
             return sql_query
 
         except Exception as e:
-            print(f"Error generating SQL with LLM: {e}")
+            logger.info("Error generating SQL with LLM: {e}")
             # Fallback to rule-based generation
             return self.generate_sql_rule_based(natural_language_query)
 
