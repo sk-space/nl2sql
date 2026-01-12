@@ -1,9 +1,6 @@
-import logging
-import os
-
-import torch
+import logging, os, torch
 from dotenv import load_dotenv
-from langchain_huggingface import HuggingFacePipeline
+from langchain_huggingface import HuggingFacePipeline, HuggingFaceEndpoint, ChatHuggingFace
 from transformers import AutoModel, AutoTokenizer, pipeline
 from openai import OpenAI
 
@@ -48,35 +45,63 @@ class HuggingFaceClientWrapper:
 class HFInferenceClient:
 
     def __init__(self):
-        self.use_api = True
+        self.use_huggingface_api = True
+        self.use_openai = False
         self._model_name = os.getenv("HF_MODEL_NAME")
+        self._api_key = os.getenv("HF_TOKEN")
 
     def load_model(self):
         """Load the model either via HuggingFace API or locally"""
-        if self.use_api:
+        if self.use_huggingface_api:
             return self._load_huggingface_api_model()
+        elif self.use_openai:
+            return self._load_huggingface_openai_model()
         else:
             return self._load_local_model()
 
 
     def _load_huggingface_api_model(self):
+        logger.info(f"Loading model via HuggingFace API: {self._model_name}")
+        # Check if HF_TOKEN is available
+        if not self._api_key:
+            logger.info("Warning: HuggingFace API KEY not found in environment variables. Using fallback.")
+
+        try:
+            llm = HuggingFaceEndpoint(
+                model=self._model_name,
+                task="text-generation",
+                max_new_tokens=512,
+                do_sample=False,
+                repetition_penalty=1.03,
+                provider="auto",
+                huggingfacehub_api_token=self._api_key
+            )
+            # return llm
+            chat_model = ChatHuggingFace(llm=llm)
+            return chat_model
+        except Exception as e:
+            logger.info(f"Error loading model via HuggingFace API: {e}")
+
+
+
+    def _load_huggingface_openai_model(self):
         """Load model using HuggingFace API (recommended)"""
-        logger.info("Loading model via HuggingFace API: {self._model_name}")
+        logger.info(f"Loading model via OpenAI: {self._model_name}")
 
         # Check if HF_TOKEN is available
-        if not os.getenv("HF_TOKEN"):
-            logger.info("Warning: HF_TOKEN not found in environment variables. Using fallback.")
+        if not self._api_key:
+            logger.info("Warning: OpenAI API KEY not found in environment variables. Using fallback.")
 
         try:
             return HuggingFaceClientWrapper()
         except Exception as e:
-            logger.info("Error loading model via API: {e}")
+            logger.info(f"Error loading model via API: {e}")
 
 
     def _load_local_model(self):
         """Load the HuggingFace model locally with fallbacks"""
         try:
-            logger.info("Loading local model: {self._model_name}")
+            logger.info(f"Loading local model: {self._model_name}")
 
             tokenizer = AutoTokenizer.from_pretrained(self._model_name)
 
@@ -108,7 +133,7 @@ class HFInferenceClient:
             return HuggingFacePipeline(pipeline=pipe)
 
         except Exception as e:
-            logger.info("Error loading local model: {self._model_name}: {e}")
+            logger.info(f"Error loading local model: {self._model_name}: {e}")
 
 
 # Create global instance

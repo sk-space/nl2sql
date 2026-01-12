@@ -1,6 +1,5 @@
 import logging
 from typing import Any
-
 import pymysql
 from pymysql.cursors import DictCursor
 from core.config import config
@@ -24,7 +23,7 @@ class DatabaseManager:
                 charset='utf8mb4',
                 autocommit=True
             )
-            logger.info("✅ Connected to database: {config.DB_NAME}")
+            logger.info(f"✅ Connected to database: {config.DB_NAME}")
         except Exception as e:
             raise ConnectionError(f"❌ Database connection failed: {e}")
 
