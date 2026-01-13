@@ -1,9 +1,9 @@
-import logging
 from typing import List, Dict, Any
 import json
 from core.database import db_manager
+from logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SchemaManager:
@@ -436,6 +436,8 @@ class SchemaManager:
                     table_name=table_name,
                     database_name=database_name,
                 )
+
+            logger.info(full_context)
 
             return json.dumps(full_context, indent=2, default=str)
 

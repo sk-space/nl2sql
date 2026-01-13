@@ -1,11 +1,13 @@
-import logging, os, torch
+import os, torch
 from dotenv import load_dotenv
 from langchain_huggingface import HuggingFacePipeline, HuggingFaceEndpoint, ChatHuggingFace
 from transformers import AutoModel, AutoTokenizer, pipeline
 from openai import OpenAI
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 load_dotenv()
-logger = logging.getLogger(__name__)
 
 
 class HuggingFaceClientWrapper:

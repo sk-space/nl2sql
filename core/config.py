@@ -1,11 +1,12 @@
-import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
 from dotenv import load_dotenv
+from logger import get_logger
 
 load_dotenv(verbose=True)
-logger = logging.getLogger(__name__)
+
+logger = get_logger(__name__)
 
 @dataclass
 class Config:

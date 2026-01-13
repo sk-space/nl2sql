@@ -1,12 +1,13 @@
-import logging
 import os
 from dotenv import load_dotenv
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import PromptTemplate
 from core.llm import hf_interface
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 load_dotenv()
-logger = logging.getLogger(__name__)
 
 
 class SQLOutputParser(BaseOutputParser):
@@ -56,20 +57,36 @@ class NL2SQLAgent:
         prompt_template = PromptTemplate(
             input_variables=["schema", "question"],
             template="""
-                           You are a SQL expert. Convert the following natural language question into a SQL query using the database schema below.
-
-                           Database Schema:
-                           {schema}
-
-                           Natural Language Question: {question}
-
-                           Instructions:
-                           1. Generate only the SQL query without any explanations
-                           2. Use proper SQL syntax
-                           3. Only query the tables that are necessary
-                           4. Return the query in a single line
-
-                           SQL Query:
+                            You are a SQL expert. Convert the following natural language question into a SQL query using the database schema below.
+                            You are an expert database engineer and SQL query generator.
+                            You specialize in converting natural language requests into syntactically correct, optimized, and secure SQL queries.
+                            You strictly follow the database schema provided.
+                            You never hallucinate tables, columns, or relationships.
+                            You understand indexing, query planning, and efficient data retrieval methods.
+                            You intentionally avoid unnecessary complexity in queries and try to make the query as simple as possible.
+                            You always return the SQL query in a single line without any explanations or additional text.
+            
+            
+                            DATABASE SCHEMA:
+                            {schema}
+                            
+                            Natural Language Question: {question}
+                            
+                            INSTRUCTIONS:
+                            1. Generate only the SQL query without any explanations.
+                            2. USE PROPER SQL SYNTAX.
+                            3. ENSURE the query is OPTIMIZED for performance and accuracy.
+                            4. Use ONLY the tables, columns, and relationships provided in the schema.
+                            5. Do NOT assume missing columns or infer unnamed relationships.
+                            6. PROPERLY analyze the natural language question to understand the INTENT and required data.
+                            7. READ the schema CAREFULLY to avoid referencing non-existent tables or columns.
+                            8. Analyze the database schema properly to identify relevant tables, keys, indexes and relationships in details.
+                            9. Always use table aliases to improve query readability.
+                            10. Make sure to use JOINs appropriately and only when required based on the relationships defined in the schema.
+                            11. Validate the SQL query against the schema to ensure all referenced tables and columns exist.
+                            12. Always return the query in a single line.
+                            
+                            SQL Query:
                        """
         )
 
@@ -97,8 +114,11 @@ class NL2SQLAgent:
                     )
                 )
             logger.info(f"Response text: {response_text}")
+
             sql_query = self.output_parser.parse(response_text)
-            return sql_query
+            logger.info(f"Response query: {sql_query}")
+
+            return response_text
 
         except Exception as e:
             logger.info(f"Error generating SQL with LLM: {e}")

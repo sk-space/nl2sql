@@ -1,10 +1,10 @@
-import logging
 from typing import Any
 import pymysql
 from pymysql.cursors import DictCursor
 from core.config import config
+from logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class DatabaseManager:
     def __init__(self):
