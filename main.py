@@ -1,17 +1,20 @@
+import json
+from contextlib import asynccontextmanager
+from typing import Dict, Any
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Dict, Any
-from contextlib import asynccontextmanager
-from client import MCPClient
-from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
+from client import MCPClient
+from logger import get_logger, setup_file_logging
 
 load_dotenv()
-
+setup_file_logging("server.log")
+logger = get_logger(__name__)
 
 class Settings(BaseSettings):
-    server_script_path: str = "/Users/alejandro/repos/code/mcp/documentation/main.py"
+    server_script_path: str = "C:/Users/hpgsumank/Documents/nl2sql/server.py"
 
 
 settings = Settings()
@@ -63,16 +66,6 @@ class ToolCall(BaseModel):
     args: Dict[str, Any]
 
 
-@app.post("/query")
-async def process_query(request: QueryRequest):
-    """Process a query and return the response"""
-    try:
-        messages = await app.state.client.process_query(request.query)
-        return {"messages": messages}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 @app.get("/tools")
 async def get_tools():
     """Get the list of available tools"""
@@ -89,7 +82,34 @@ async def get_tools():
             ]
         }
     except Exception as e:
+        logger.info(f"Failed to get available tools: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/query")
+async def process_query(request: QueryRequest):
+    """Process a query and return the response"""
+    try:
+        logger.info(f"Received query: {request.query}")
+        response = await app.state.client.process_query(request.query)
+        return json.loads(response)
+    except Exception as e:
+        logger.info(f"Failed to generate sql: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+@app.post('/execute-sql')
+async def execute_sql(request: QueryRequest):
+    """Execute custom SQL query"""
+    try:
+        logger.info(f"Received sql: {request.query}")
+        response = await app.state.client.execute_query(request.query)
+        return json.loads(response)
+
+    except Exception as e:
+        logger.info(f"Failed to execute query: {str(e)}")
+        return HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":

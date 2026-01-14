@@ -39,6 +39,29 @@ async def get_schema_context():
 
 @mcp.tool()
 async def convert_to_sql(query: str) -> dict:
+    """
+        Converts a natural language query into a valid SQL statement.
+
+        This tool accepts a user-provided natural language question describing
+        a data retrieval requirement and generates a syntactically correct,
+        schema-aware SQL query based on the current database structure.
+
+        The function:
+        - Loads the active database schema context
+        - Uses an NL-to-SQL agent to translate the natural language query
+        - Returns the generated SQL without executing it
+
+        Parameters:
+            query (str): A natural language query describing the desired data,
+                         such as "List all active projects in the HR department".
+
+        Returns:
+            dict: A structured response containing:
+                - success (bool): Indicates whether SQL generation was successful
+                - query (str): The original natural language query
+                - sql (str): The generated SQL query (if successful)
+                - error (str): Error message (if failed)
+    """
     try:
         schema_context = await get_schema_context()
         sql = nl2sql_agent.generate_sql(query, schema_context)
@@ -58,9 +81,36 @@ async def convert_to_sql(query: str) -> dict:
 @mcp.tool()
 def execute_sql(query: str) -> Dict[str, Any]:
     """
-    Execute an SQL query and return results.
-    SELECT: returns columns + list of row dicts with actual values.
-    DML: returns rows affected and optionally any returned rows.
+        Executes a SQL query against the connected database and returns structured results.
+
+        This tool is responsible for executing a validated SQL statement generated
+        by an upstream agent (e.g., NL-to-SQL converter). It supports both read and
+        write operations and returns results in a structured JSON-compatible format.
+
+        Behavior:
+        - Executes the provided SQL query using the active database connection
+        - Automatically detects the query type (SELECT / WITH vs DML)
+        - Fetches and returns result rows for SELECT queries
+        - Commits transactions for INSERT, UPDATE, and DELETE queries
+        - Returns affected row count for write operations
+
+        Parameters:
+            query (str): A valid SQL query to be executed. The query is assumed
+                         to be syntactically correct and safe to run.
+
+        Returns:
+            Dict[str, Any]: A structured response containing:
+                - success (bool): Indicates whether execution succeeded
+                - columns (list[str]): Column names (for SELECT queries)
+                - data (list[dict]): Query result rows as dictionaries
+                - rows_affected (int): Number of rows modified (for DML queries)
+                - error (str): Error message if execution fails
+
+        Notes:
+            - SELECT and WITH queries return result sets
+            - INSERT / UPDATE / DELETE queries return rows_affected
+            - This function does not perform SQL validation or sanitization
+              and should only be called with trusted or pre-validated SQL
     """
     try:
         with db_manager.get_cursor() as cursor:

@@ -113,7 +113,7 @@ class NL2SQLAgent:
             sql_query = self.output_parser.parse(response_text)
             logger.info(f"Response query: {sql_query}")
 
-            return response_text
+            return sql_query
 
         except Exception as e:
             logger.info(f"Error generating SQL with LLM: {e}")

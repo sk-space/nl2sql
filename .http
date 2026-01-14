@@ -1,0 +1,19 @@
+### Get Tools
+GET http://0.0.0.0:8000/tools
+Content-Type: application/json
+
+### Get SQL from Natural Language Query
+POST http://0.0.0.0:8000/query
+Content-Type: application/json
+
+{
+ "query": "Get details of all the projects and compute the spent budget over employee salary on each project and determine if project is costing more than allocated budget along with the remaining budget"
+}
+
+### Execute SQL Query
+POST http://0.0.0.0:8000/execute-sql
+Content-Type: application/json
+
+{
+ "query": "SELECT p.*, SUM(ep.allocation_percent * e.salary) / 100 AS spent_budget, p.budget - SUM(ep.allocation_percent * e.salary) / 100 AS remaining_budget, CASE WHEN p.budget < SUM(ep.allocation_percent * e.salary) / 100 THEN 'Yes' ELSE 'No' END AS is_costing_more_than_allocated FROM project p JOIN employee_project ep ON p.project_id = ep.project_id JOIN employee e ON ep.employee_id = e.employee_id GROUP BY p.project_id;"
+}

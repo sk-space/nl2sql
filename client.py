@@ -2,7 +2,7 @@ import asyncio
 import json
 import traceback
 from contextlib import AsyncExitStack
-from typing import Optional
+from typing import Optional, List, Any
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -20,7 +20,7 @@ class MCPClient:
         self.llm = hf_interface.load_model()
         self.tools = []
         self.messages = []
-        var = self.stdio, self.write
+        self.stdio, self.write = None, None
 
 
     # connect to MCP server
@@ -28,7 +28,7 @@ class MCPClient:
         try:
             is_python = server_script_path.endswith(".py")
             is_js = server_script_path.endswith(".js")
-            if not (is_python and is_js):
+            if not (is_python or is_js):
                 raise ValueError("Server script must be a .py or .js file")
 
             command = "python" if is_python else "node"
@@ -37,6 +37,7 @@ class MCPClient:
                 args=[server_script_path],
                 env=None
             )
+            logger.info(f"Connecting to MCP server with command: {command} {server_script_path}")
 
             stdio_transport = await self.exit_stack.enter_async_context(
                 stdio_client(server_params)
@@ -51,14 +52,16 @@ class MCPClient:
             logger.info("Connected to MCP server")
 
             mcp_tools = await self.get_mcp_tools()
+            logger.info(f"Retrieved MCP tools: {[tool.name for tool in mcp_tools]}")
             self.tools = [
                 {
                     "name": tool.name,
-                    "description": tool.description,
+                    "description": tool.description.replace("\n", " ").strip(),
                     "input_schema": tool.inputSchema,
                 }
                 for tool in mcp_tools
             ]
+            logger.info(f"Available tools: {self.tools}")
 
             return True
 
@@ -75,7 +78,7 @@ class MCPClient:
     async def get_mcp_tools(self):
         try:
             response = await self.session.list_tools()
-            self.tools = response.tools
+            return response.tools
 
         except Exception as e:
             logger.error(f"Error getting to MCP tools: {e}")
@@ -89,27 +92,43 @@ class MCPClient:
             user_message = {"role": "user", "content": natural_language_query}
             self.messages = [user_message]
 
-            if not "convert_to_sql" in self.tools:
+            tool_names = [tool.get("name") for tool in self.tools if "name" in tool]
+            logger.info(f"Processed query: {tool_names}")
+            if not "convert_to_sql" in tool_names:
                 logger.info("Required tool not found for processing query.\n Exiting the process.")
                 raise
 
             response = await self.session.call_tool("convert_to_sql", arguments={"query": natural_language_query})
             logger.info(f"Processed query response: {response}")
-            assistant_message = {
-                "role": "assistant",
-                "content": response.content[0].text
-            }
-            self.messages.append(assistant_message)
+            # assistant_message = {
+            #     "role": "assistant",
+            #     "content": response.content[0].text.replace("\n", " ").strip()
+            # }
+            # self.messages.append(assistant_message)
 
-            return self.messages
+            return response.content[0].text
         except Exception as e:
             logger.error(f"Error processing query: {e}")
             raise
 
 
     # execute query
-    async def execute_query(self):
-        ...
+    async def execute_query(self, sql: str):
+        try:
+            logger.info("Executing query via MCP client")
+            tool_names = [tool.get("name") for tool in self.tools if "name" in tool]
+            logger.info(f"Processed query: {tool_names}")
+
+            if not "execute_sql" in tool_names:
+                logger.info("Required tool not found for processing query.\n Exiting the process.")
+                raise
+
+            response = await self.session.call_tool("execute_sql", arguments={"query": sql})
+            logger.info(f"Executed query response: {response}")
+            return response.content[0].text
+        except Exception as e:
+            logger.error(f"Error executing query: {e}")
+            raise
 
 
 
