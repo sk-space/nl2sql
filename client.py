@@ -7,9 +7,9 @@ from typing import Optional
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from core.llm import hf_interface
-import logging
+from logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # nest_asyncio.apply()  # Needed to run interactive python
 
@@ -20,7 +20,6 @@ class MCPClient:
         self.llm = hf_interface.load_model()
         self.tools = []
         self.messages = []
-        self.logger = logger
         var = self.stdio, self.write
 
 
@@ -49,7 +48,7 @@ class MCPClient:
 
             await self.session.initialize()
 
-            self.logger.info("Connected to MCP server")
+            logger.info("Connected to MCP server")
 
             mcp_tools = await self.get_mcp_tools()
             self.tools = [
@@ -64,7 +63,7 @@ class MCPClient:
             return True
 
         except Exception as e:
-            self.logger.error(f"Error connecting to MCP server: {e}")
+            logger.error(f"Error connecting to MCP server: {e}")
             traceback.print_exc()
             raise
 
@@ -79,23 +78,23 @@ class MCPClient:
             self.tools = response.tools
 
         except Exception as e:
-            self.logger.error(f"Error getting to MCP tools: {e}")
+            logger.error(f"Error getting to MCP tools: {e}")
             raise
 
 
     # process query
     async def process_query(self, natural_language_query: str):
         try:
-            self.logger.info(f"Processing query: {natural_language_query}")
+            logger.info(f"Processing query: {natural_language_query}")
             user_message = {"role": "user", "content": natural_language_query}
             self.messages = [user_message]
 
             if not "convert_to_sql" in self.tools:
-                self.logger.info("Required tool not found for processing query.\n Exiting the process.")
+                logger.info("Required tool not found for processing query.\n Exiting the process.")
                 raise
 
             response = await self.session.call_tool("convert_to_sql", arguments={"query": natural_language_query})
-            self.logger.info(f"Processed query response: {response}")
+            logger.info(f"Processed query response: {response}")
             assistant_message = {
                 "role": "assistant",
                 "content": response.content[0].text
@@ -104,7 +103,7 @@ class MCPClient:
 
             return self.messages
         except Exception as e:
-            self.logger.error(f"Error processing query: {e}")
+            logger.error(f"Error processing query: {e}")
             raise
 
 
@@ -118,9 +117,9 @@ class MCPClient:
     async def cleanup(self):
         try:
             await self.exit_stack.aclose()
-            self.logger.info("Cleaned up MCP server")
+            logger.info("Cleaned up MCP server")
         except Exception as e:
-            self.logger.error(f"Error during cleanup: {e}")
+            logger.error(f"Error during cleanup: {e}")
             traceback.print_exc()
             raise
 

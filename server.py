@@ -30,7 +30,7 @@ async def get_db_connection():
 async def get_schema_context():
     try:
         logger.info("Schema context configured")
-        return schema_manager.get_full_schema_context(config.DB_NAME)
+        return schema_manager.get_schema_string(config.DB_NAME)
     except Exception as e:
         logger.info(f"Error getting schema context: {e}")
         raise
@@ -57,31 +57,48 @@ async def convert_to_sql(query: str) -> dict:
 
 @mcp.tool()
 def execute_sql(query: str) -> Dict[str, Any]:
-    """Execute SQL query and return results"""
+    """
+    Execute an SQL query and return results.
+    SELECT: returns columns + list of row dicts with actual values.
+    DML: returns rows affected and optionally any returned rows.
+    """
     try:
-        cursor = db_manager.cursor()
-        cursor.execute(query)
+        with db_manager.get_cursor() as cursor:
+            cursor.execute(query)
 
-        if query.strip().upper().startswith('SELECT'):
-            results = cursor.fetchall()
-            columns = [description[0] for description in cursor.description]
-            return {
-                "success": True,
-                "columns": columns,
-                "data": [dict(zip(columns, row)) for row in results]
-            }
-        else:
-            cursor.commit()
-            return {
-                "success": True,
-                "message": f"Query executed successfully. Rows affected: {cursor.rowcount}"
-            }
+            query_type = query.strip().split()[0].upper()
+
+            if query_type in ("SELECT", "WITH"):
+                # Fetch actual rows
+                rows = cursor.fetchall()
+
+                if not rows:
+                    return {"success": True, "columns": [], "data": []}
+
+                # Get column names
+                columns = [desc[0] for desc in cursor.description]
+
+                # Map actual row values into dict
+                data = [dict(row) for row in rows]
+
+                return {"success": True, "columns": columns, "data": data}
+
+            else:
+                # For INSERT, UPDATE, DELETE
+                db_manager.commit()
+                rowcount = cursor.rowcount
+
+                # Handle RETURNING rows if supported
+                data = []
+                if cursor.description:
+                    rows = cursor.fetchall()
+                    columns = [desc[0] for desc in cursor.description]
+                    data = [dict(zip(columns, row)) for row in rows]
+
+                return {"success": True, "rows_affected": rowcount, "data": data}
 
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}
 
 
 if __name__ == "__main__":

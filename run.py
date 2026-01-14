@@ -2,21 +2,25 @@ from core.database import db_manager
 from core.schema import schema_manager
 from core.llm import hf_interface
 from core.agent import nl2sql_agent
+from logger import get_logger, setup_file_logging
+
+setup_file_logging("server.log")
+logger = get_logger(__name__)
 
 if __name__ == "__main__":
     db = db_manager
     try:
         db.connect()
-        print("Connected to database")
-        print("Is connected: ", db.is_connected())
+        logger.info("Connected to database")
+        logger.info("Is connected: ", db.is_connected())
 
         if db.is_connected():
             # Get complete table details
             db_name = "test_db"
             table_name = "employee"  # Replace with your table name
-            details = schema_manager.get_full_schema_context(db_name)
+            details = schema_manager.get_schema_string(db_name)
 
-            print(f"Retrieved schema details for table: {details}")
+            logger.info(f"Retrieved schema details for table: {details}")
             #
             # print("=" * 60)
             # print(f"COMPLETE TABLE ANALYSIS: {table_name}")
@@ -82,12 +86,12 @@ if __name__ == "__main__":
             # print(f"\n✅ Schema exported to {table_name}_schema.json")
             #
             # client = hf_interface.load_model()
-            # print("Loaded model: ", model)
+            # logger("Loaded model: ", model)
 
             # nl = "List the names of employees hired after 2020"
             nl = "Get details of all the projects and compute the spent budget over employee salary on each project and determine if project is costing more than allocated budget along with the remaining budget"
             sql = nl2sql_agent.generate_sql(nl, details)
-            print("\nGenerated SQL: ", sql)
+            logger.info(f"Generated SQL: {sql}")
 
     finally:
         db.close()
