@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from pydantic_settings import BaseSettings
 from client import MCPClient
 from logger import get_logger, setup_file_logging
+from core.config import config
 
 load_dotenv()
 setup_file_logging("server.log")
@@ -115,4 +116,4 @@ async def execute_sql(request: QueryRequest):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=f"{config.API_HOST}", port=config.API_PORT)

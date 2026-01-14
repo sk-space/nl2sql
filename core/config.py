@@ -12,7 +12,7 @@ logger = get_logger(__name__)
 class Config:
     # Database Configuration
     DB_HOST: str = os.getenv("DB_HOST", "localhost")
-    DB_PORT: int = int(os.getenv("DB_PORT", "3306"))
+    DB_PORT: int = int(os.getenv("DB_PORT", 3306))
     DB_USER: str = os.getenv("DB_USER", "root")
     DB_PASSWORD: str = os.getenv("DB_PASSWORD", "toor")
     DB_NAME: str = os.getenv("DB_NAME", "test_db")
@@ -24,11 +24,11 @@ class Config:
 
     # MCP Server Configuration
     MCP_SERVER_HOST: str = os.getenv("MCP_SERVER_HOST", "localhost")
-    MCP_SERVER_PORT: int = int(os.getenv("MCP_SERVER_PORT", "8000"))
+    MCP_SERVER_PORT: int = int(os.getenv("MCP_SERVER_PORT", 8000))
 
     # API Configuration
     API_HOST: str = os.getenv("API_HOST", "localhost")
-    API_PORT: int = int(os.getenv("API_PORT", "8001"))
+    API_PORT: int = int(os.getenv("API_PORT", 8001))
 
     # Application Paths
     BASE_DIR: Path = Path(__file__).parent.parent

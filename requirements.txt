@@ -17,3 +17,4 @@ langchain-core==1.2.6
 langchain==1.2.2
 langchain-community==1.0.0a1
 langchain-huggingface==1.2.0
+streamlit==1.52.2
