@@ -75,17 +75,17 @@ with left:
 
 with right:
     st.header("Database Schema")
-    if st.button("Load Schema"):
-        endpoint = f"{base_url}/schema"
-        try:
-            resp = requests.get(endpoint, timeout=15)
-            resp.raise_for_status()
-            data = resp.json()
-            schema = data.get("schema", "No schema available.")
-            st.text_area("Schema", value=schema, height=400)
-        except requests.RequestException as e:
-            logger.exception("Schema request failed")
-            st.error(f"Schema request failed: {e}")
-        except ValueError:
-            logger.exception("Schema returned non-JSON")
-            st.error("Schema response was not valid JSON.")
+    # if st.button("Load Schema"):
+    endpoint = f"{base_url}/schema"
+    try:
+        resp = requests.get(endpoint, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+        schema = data.get("schema", "No schema available.")
+        st.text_area("Schema", value=schema, height=800)
+    except requests.RequestException as e:
+        logger.exception("Schema request failed")
+        st.error(f"Schema request failed: {e}")
+    except ValueError:
+        logger.exception("Schema returned non-JSON")
+        st.error("Schema response was not valid JSON.")

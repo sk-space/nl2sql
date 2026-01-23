@@ -342,9 +342,11 @@ class SchemaManager:
 
             schema_string += "\n"
 
+        logger.info(f"Schema string: {schema_string}")
+
         return schema_string
 
-    def get_schema_info(self, database_name: str = None) -> Dict[str, Any]:
+    async def get_schema_info(self, database_name: str = None) -> Dict[str, Any]:
         """Get schema information as a structured dictionary"""
         schema_info = self.get_schema(database_name)
         schema_string = ""

@@ -2,6 +2,10 @@
 GET http://localhost:8001/api/tools
 Content-Type: application/json
 
+### Get Tools
+GET http://localhost:8001/api/schema
+Content-Type: application/json
+
 ### Get SQL from Natural Language Query
 POST http://localhost:8001/api/query
 Content-Type: application/json
