@@ -1,9 +1,9 @@
 ### Get Tools
-GET http://0.0.0.0:8000/tools
+GET http://localhost:8001/api/tools
 Content-Type: application/json
 
 ### Get SQL from Natural Language Query
-POST http://0.0.0.0:8000/query
+POST http://localhost:8001/api/query
 Content-Type: application/json
 
 {
@@ -11,7 +11,7 @@ Content-Type: application/json
 }
 
 ### Execute SQL Query
-POST http://0.0.0.0:8000/execute-sql
+POST http://localhost:8001/api/execute-sql
 Content-Type: application/json
 
 {

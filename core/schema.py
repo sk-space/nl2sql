@@ -255,6 +255,33 @@ class SchemaManager:
             cursor.execute(f"SELECT * FROM `{database_name}`.`{table_name}` LIMIT %s", (limit,))
             return cursor.fetchall()
 
+    def _get_table_columns(self, table_name: str, database_name: str) -> List[Dict]:
+        """Get detailed column information"""
+        query = """
+        SELECT 
+            COLUMN_NAME,
+            DATA_TYPE,
+            IS_NULLABLE,
+            COLUMN_KEY
+        FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s
+        ORDER BY ORDINAL_POSITION
+        """
+
+        with db_manager.get_cursor() as cursor:
+            cursor.execute(query, (database_name, table_name))
+            columns = cursor.fetchall()
+
+            return [
+                {
+                    "name": col["COLUMN_NAME"],
+                    "type": col["DATA_TYPE"],
+                    "nullable": col["IS_NULLABLE"] == "YES",
+                    "primary_key": col["COLUMN_KEY"] == "PRI"
+                }
+                for col in columns
+            ]
+
 
     def get_schema(self, database_name: str = None):
         """Get complete database schema information for relational DBs"""
@@ -269,14 +296,7 @@ class SchemaManager:
 
             for table in tables:
                 # Get columns for table
-                cursor.execute("""
-                               SELECT column_name, data_type, is_nullable, column_key
-                               FROM information_schema.columns
-                               WHERE table_schema =%s
-                                 AND table_name = %s
-                               ORDER BY ordinal_position;
-                               """, (database_name, table))
-                columns = cursor.fetchall()
+                columns = self._get_table_columns(table, database_name)
                 logger.info(f"Columns for table {table}: {columns}")
 
                 # Get sample data
@@ -289,15 +309,7 @@ class SchemaManager:
 
                 schema_info["tables"][table] = {
                     "create_statement": self._get_create_statement(table, database_name),
-                    "columns": [
-                        {
-                            "name": col["COLUMN_NAME"],
-                            "type": col["DATA_TYPE"],
-                            "nullable": col["IS_NULLABLE"] == "YES",
-                            "primary_key": col["COLUMN_KEY"] == "PRI"
-                        }
-                        for col in columns
-                    ],
+                    "columns": columns,
                     "sample_data": [dict(row) for row in rows]
                 }
                 logger.info(f"Schema info for table {table}: {schema_info['tables'][table]}")
@@ -329,6 +341,21 @@ class SchemaManager:
                     schema_string += f"  {sample}\n"
 
             schema_string += "\n"
+
+        return schema_string
+
+    def get_schema_info(self, database_name: str = None) -> Dict[str, Any]:
+        """Get schema information as a structured dictionary"""
+        schema_info = self.get_schema(database_name)
+        schema_string = ""
+        for table_name, table_info in schema_info["tables"].items():
+            schema_string += f"Table: {table_name}\n"
+            schema_string += "Columns:\n"
+
+            for col in table_info["columns"]:
+                pk_flag = " PRIMARY KEY" if col["primary_key"] else ""
+                null_flag = " NOT NULL" if not col["nullable"] else ""
+                schema_string += f"  - {col['name']} ({col['type']}{pk_flag}{null_flag})\n"
 
         return schema_string
 

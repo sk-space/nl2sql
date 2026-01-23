@@ -36,6 +36,26 @@ async def get_schema_context():
         raise
 
 
+@mcp.tool()
+async def get_schema():
+    """
+        Retrieves the current database schema as a formatted string.
+
+        This tool connects to the active database and extracts the schema
+        information, including tables, columns, and relationships. The schema
+        is returned in a human-readable format suitable for use by agents
+        performing natural language to SQL translation.
+
+        Returns:
+            str: A formatted string representation of the database schema.
+    """
+    try:
+        schema_context = await schema_manager.get_schema_info(config.DB_NAME)
+        return schema_context
+    except Exception as e:
+        return f"❌ Error retrieving schema: {e}"
+
+
 
 @mcp.tool()
 async def convert_to_sql(query: str) -> dict:

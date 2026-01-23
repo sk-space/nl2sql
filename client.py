@@ -85,6 +85,24 @@ class MCPClient:
             raise
 
 
+    async def get_schema(self):
+        try:
+            logger.info("Retrieving schema via MCP client")
+            tool_names = [tool.get("name") for tool in self.tools if "name" in tool]
+            logger.info(f"Processed query: {tool_names}")
+
+            if not "get_schema" in tool_names:
+                logger.info("Required tool not found for processing query.\n Exiting the process.")
+                raise
+
+            response = await self.session.call_tool("get_schema", arguments={})
+            logger.info(f"Retrieved schema response: {response}")
+            return response.content[0].text
+        except Exception as e:
+            logger.error(f"Error retrieving schema: {e}")
+            raise
+
+
     # process query
     async def process_query(self, natural_language_query: str):
         try:

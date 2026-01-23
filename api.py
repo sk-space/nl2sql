@@ -15,7 +15,7 @@ setup_file_logging("server.log")
 logger = get_logger(__name__)
 
 class Settings(BaseSettings):
-    server_script_path: str = "C:/Users/hpgsumank/Documents/nl2sql/server.py"
+    server_script_path: str = "server.py"
 
 
 settings = Settings()
@@ -67,7 +67,7 @@ class ToolCall(BaseModel):
     args: Dict[str, Any]
 
 
-@app.get("/tools")
+@app.get("/api/tools")
 async def get_tools():
     """Get the list of available tools"""
     try:
@@ -87,7 +87,19 @@ async def get_tools():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/query")
+@app.get("/api/schema")
+async def get_schema():
+    """Get the database schema"""
+    try:
+        schema = await app.state.client.get_schema()
+        logger.info(f"Retrieved schema: {schema}")
+        return {"schema": schema}
+    except Exception as e:
+        logger.info(f"Failed to get database schema: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/query")
 async def process_query(request: QueryRequest):
     """Process a query and return the response"""
     try:
@@ -100,7 +112,7 @@ async def process_query(request: QueryRequest):
 
 
 
-@app.post('/execute-sql')
+@app.post('/api/execute-sql')
 async def execute_sql(request: QueryRequest):
     """Execute custom SQL query"""
     try:

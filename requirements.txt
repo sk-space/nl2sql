@@ -18,3 +18,4 @@ langchain==1.2.2
 langchain-community==1.0.0a1
 langchain-huggingface==1.2.0
 streamlit==1.52.2
+pandas==2.3.3
